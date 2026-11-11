@@ -28,6 +28,7 @@ jobs:
       - name: Prepare static files (prebuilt outside Hugging Face)
         run: |
           cp -R dist /tmp/nearscope-dist
+          rm -rf node_modules dist
           git switch -c hf-deploy
           git rm -rf .
           cp -R /tmp/nearscope-dist/. .
