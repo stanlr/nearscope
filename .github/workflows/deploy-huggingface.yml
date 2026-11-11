@@ -1,0 +1,38 @@
+name: Deploy to Hugging Face Spaces
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build NearScope
+        run: npm run build
+
+      - name: Push source to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "Missing HF_TOKEN. Add it in GitHub repository Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          git config --global credential.helper store
+          printf 'https://sopuruchukwu:%s@huggingface.co\n' "$HF_TOKEN" > ~/.git-credentials
+          git remote add huggingface https://huggingface.co/spaces/sopuruchukwu/nearscope
+          git push --force huggingface HEAD:main
