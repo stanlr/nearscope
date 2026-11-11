@@ -25,7 +25,29 @@ jobs:
       - name: Build NearScope
         run: npm run build
 
-      - name: Push source to Hugging Face Space
+      - name: Prepare static files (prebuilt outside Hugging Face)
+        run: |
+          cp -R dist /tmp/nearscope-dist
+          git switch -c hf-deploy
+          git rm -rf .
+          cp -R /tmp/nearscope-dist/. .
+          cat > README.md <<'EOF'
+          ---
+          title: NearScope
+          emoji: 🌐
+          colorFrom: blue
+          colorTo: green
+          sdk: static
+          app_file: index.html
+          pinned: false
+          ---
+
+          NearScope — a read-only live dashboard for NEAR Protocol mainnet.
+          EOF
+          git add -f .
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Deploy prebuilt NearScope static site"
+
+      - name: Push prebuilt static site to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -36,4 +58,4 @@ jobs:
           git config --global credential.helper store
           printf 'https://sopuruchukwu:%s@huggingface.co\n' "$HF_TOKEN" > ~/.git-credentials
           git remote add huggingface https://huggingface.co/spaces/sopuruchukwu/nearscope
-          git push --force huggingface HEAD:main
+          git push --force huggingface hf-deploy:main
