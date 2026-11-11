@@ -31,14 +31,24 @@ async function rpc<T>(method: string, params: unknown): Promise<T> {
 }
 
 function shortHash(value = '') { return value ? value.slice(0, 8) + '…' + value.slice(-6) : '—' }
-function formatTime(ns?: string) {
-  if (!ns) return '—'
-  const date = new Date(Number(BigInt(ns) / 1000000n))
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+function timestampMs(value?: string) {
+  if (!value) return null
+  // NEAR RPC endpoints may return nanoseconds as digits or an ISO-8601 timestamp.
+  if (/^\\d+$/.test(value)) {
+    try { return Number(BigInt(value) / 1000000n) } catch { return null }
+  }
+  const parsed = Date.parse(value)
+  return Number.isFinite(parsed) ? parsed : null
 }
-function relativeTime(ns?: string) {
-  if (!ns) return '—'
-  const seconds = Math.max(0, Math.floor((Date.now() - Number(BigInt(ns) / 1000000n)) / 1000))
+function formatTime(value?: string) {
+  const ms = timestampMs(value)
+  if (ms === null) return '—'
+  return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+function relativeTime(value?: string) {
+  const ms = timestampMs(value)
+  if (ms === null) return '—'
+  const seconds = Math.max(0, Math.floor((Date.now() - ms) / 1000))
   return seconds < 60 ? `${seconds}s ago` : `${Math.floor(seconds / 60)}m ago`
 }
 function formatStake(value?: string) {
