@@ -19,8 +19,13 @@ async function rpc<T>(method: string, params: unknown): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 'nearscope', method, params }),
   })
-  if (!response.ok) throw new Error(`NEAR RPC returned HTTP ${response.status}`)
-  const data = await response.json() as RpcResult
+  const body = await response.text()
+  let data: RpcResult
+  try { data = JSON.parse(body) as RpcResult } catch { data = {} }
+  if (!response.ok) {
+    const detail = data.error?.message || body.slice(0, 220) || response.statusText
+    throw new Error(`NEAR RPC HTTP ${response.status}: ${detail}`)
+  }
   if (data.error) throw new Error(data.error.message || 'NEAR RPC request failed')
   return data.result as T
 }
@@ -55,9 +60,9 @@ function App() {
     if (quiet) setRefreshing(true); else setLoading(true)
     setError('')
     try {
-      const [network, validatorData, latest] = await Promise.all([
-        rpc<NetworkStatus>('status', {}),
-        rpc<{ current_validators?: Validator[] }>('validators', { block_id: 'final' }),
+      const network = await rpc<NetworkStatus>('status', {})
+      const [validatorData, latest] = await Promise.all([
+        rpc<{ current_validators?: Validator[] }>('validators', { epoch_id: network.sync_info.epoch_id }),
         rpc<Block>('block', { finality: 'final' }),
       ])
       setStatus(network)
