@@ -126,9 +126,11 @@ function App() {
     <aside className="sidebar">
       <a className="brand" href="#"><span className="brand-mark"><Activity size={19}/></span><span>near<span className="brand-light">scope</span></span></a>
       <div className="side-label">OVERVIEW</div>
-      <a className="nav-item active" href="#overview"><Layers3 size={17}/> Network overview</a>
-      <a className="nav-item" href="#blocks"><Blocks size={17}/> Recent blocks</a>
-      <a className="nav-item" href="#validators"><Users size={17}/> Validators</a>
+      <nav className="nav-links" aria-label="Dashboard sections">
+        <a className="nav-item active" href="#overview"><Layers3 size={17}/> Network overview</a>
+        <a className="nav-item" href="#blocks"><Blocks size={17}/> Recent blocks</a>
+        <a className="nav-item" href="#validators"><Users size={17}/> Validators</a>
+      </nav>
       <div className="sidebar-bottom">
         <div className="network-chip"><span className="pulse-dot"/> NEAR Mainnet</div>
         <p>Live data from NEAR Protocol RPC.</p>
