@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowUpRight, Blocks, Check, ChevronRight, Clock3, Copy, ExternalLink, Globe2, Layers3, RefreshCw, ShieldCheck, Users, Zap } from 'lucide-react'
 
-const RPC = 'https://rpc.mainnet.near.org'
+const RPC = 'https://free.rpc.fastnear.com'
 const EXPLORER = 'https://nearblocks.io'
 type RpcResult = { result?: any; error?: { message?: string } }
 type NetworkStatus = {
