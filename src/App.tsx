@@ -60,21 +60,41 @@ function App() {
     if (quiet) setRefreshing(true); else setLoading(true)
     setError('')
     try {
-      const network = await rpc<NetworkStatus>('status', {})
-      const [validatorData, latest] = await Promise.all([
+      // NEAR's status RPC expects an empty params array, not an empty object.
+      const network = await rpc<NetworkStatus>('status', [])
+      setStatus(network)
+
+      // Load each data panel independently so one failing RPC method does not
+      // blank the entire dashboard.
+      const [validatorResult, latestResult] = await Promise.allSettled([
         rpc<{ current_validators?: Validator[] }>('validators', { epoch_id: network.sync_info.epoch_id }),
         rpc<Block>('block', { finality: 'final' }),
       ])
-      setStatus(network)
-      setValidators(validatorData.current_validators || [])
-      const height = latest.header.height
-      const samples = await Promise.all(Array.from({ length: 12 }, (_, i) =>
-        rpc<Block>('block', { block_id: Math.max(1, height - (11 - i) * 5) }).catch(() => null)
-      ))
-      setBlocks(samples.filter((item): item is Block => Boolean(item)).reverse())
+
+      const issues: string[] = []
+      if (validatorResult.status === 'fulfilled') {
+        setValidators(validatorResult.value.current_validators || [])
+      } else {
+        issues.push(validatorResult.reason instanceof Error ? validatorResult.reason.message : 'Validator data unavailable')
+      }
+
+      if (latestResult.status === 'fulfilled') {
+        const height = latestResult.value.header.height
+        const sampleHeights = Array.from({ length: 8 }, (_, i) =>
+          Math.max(1, height - (7 - i) * 5)
+        )
+        const samples = await Promise.all(sampleHeights.map(block_id =>
+          rpc<Block>('block', { block_id }).catch(() => null)
+        ))
+        setBlocks(samples.filter((item): item is Block => Boolean(item)).reverse())
+      } else {
+        issues.push(latestResult.reason instanceof Error ? latestResult.reason.message : 'Recent block data unavailable')
+      }
+
       setUpdatedAt(new Date())
+      if (issues.length) setError(issues.join(' · '))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load network data')
+      setError(e instanceof Error ? e.message : 'Could not load NEAR network status')
     } finally {
       setLoading(false); setRefreshing(false)
     }
